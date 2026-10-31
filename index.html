@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090d16">
+  <meta name="description" content="Personal daily routine checklist for Dhaka timezone">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Daily Routine Checklist</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root {
+      --bg: #090d16; --surface: #121a2a; --surface-card: #182338; --surface-hover: #22304c; --border: #24344d; --border-focus: #3b82f6; --text: #f1f5f9; --text-muted: #94a3b8; --accent: #10b981; --accent-bg: rgba(16,185,129,0.15); --danger: #ef4444; --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --cat-prayer: #10b981; --cat-prayer-bg: rgba(16,185,129,0.16); --cat-work: #3b82f6; --cat-work-bg: rgba(59,130,246,0.16); --cat-class: #f59e0b; --cat-class-bg: rgba(245,158,11,0.16); --cat-outreach: #8b5cf6; --cat-outreach-bg: rgba(139,92,246,0.16); --cat-rest: #a855f7; --cat-rest-bg: rgba(168,85,247,0.16); --cat-meal: #f43f5e; --cat-meal-bg: rgba(244,63,94,0.16);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: var(--bg); color: var(--text); font-family: var(--font);
+      min-height: 100dvh; -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    body {
+      display: flex; flex-direction: column;
+      padding-top: max(12px, env(safe-area-inset-top));
+      padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    }
+    .app-container { width: 100%; max-width: 720px; margin: 0 auto; padding: 0 1rem; display: flex; flex-direction: column; gap: 1.1rem; }
+    .banner-warning { background: #7f1d1d; color: #fecaca; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.85rem; display: none; }
+    .header-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap; }
+    .date-label { font-size: 1.25rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+    .streak-badge { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.35); color: #fbbf24; padding: 0.3rem 0.65rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
+    .day-selector-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .day-type-select { background: var(--surface-card); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 0.55rem 0.75rem; font-size: 1rem; font-family: inherit; outline: none; cursor: pointer; flex: 1; min-width: 170px; min-height: 48px; }
+    .day-type-select:focus { border-color: var(--border-focus); }
+    .badge-edited { background: rgba(139,92,246,0.2); border: 1px solid rgba(139,92,246,0.4); color: #c4b5fd; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .progress-stats { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-muted); }
+    .progress-stats strong { color: var(--text); }
+    .progress-track { width: 100%; height: 10px; background: var(--surface-card); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #059669, #10b981); border-radius: 999px; width: 0%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    @media (min-width: 600px) {
+      .top-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+      body { padding-top: calc(76px + env(safe-area-inset-top)); padding-bottom: 2rem; }
+    }
+    .prayers-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.1rem; display: flex; flex-direction: column; gap: 0.8rem; }
+    .card-title { font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+    .prayers-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.45rem; }
+    .prayer-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem; background: var(--surface-card); border: 1px solid var(--border); border-radius: 12px; padding: 0.6rem 0.2rem; min-height: 56px; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease; user-select: none; }
+    .prayer-btn:active { transform: scale(0.96); }
+    .prayer-btn.is-done { background: var(--cat-prayer-bg); border-color: var(--cat-prayer); color: var(--text); }
+    .prayer-btn .prayer-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; }
+    .prayer-btn.is-done .prayer-check { background: var(--cat-prayer); border-color: var(--cat-prayer); color: #000; }
+    .tasks-section { display: flex; flex-direction: column; gap: 0.65rem; }
+    .task-card { background: var(--surface-card); border: 1px solid var(--border); border-radius: 14px; padding: 0.85rem 1rem; min-height: 56px; display: flex; align-items: center; gap: 0.85rem; cursor: pointer; transition: all 0.2s ease; user-select: none; position: relative; }
+    .task-card:active { transform: scale(0.99); }
+    .task-checkbox { width: 26px; height: 26px; min-width: 26px; border-radius: 7px; border: 2px solid #475569; background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; color: transparent; font-weight: 700; font-size: 0.9rem; }
+    .task-card.is-done .task-checkbox { background: var(--accent); border-color: var(--accent); color: #090d16; animation: checkPop 0.25s ease; }
+    @keyframes checkPop { 0% { transform: scale(0.8); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    @media (prefers-reduced-motion: reduce) { .task-card.is-done .task-checkbox { animation: none; } .progress-fill, .prayer-btn { transition: none; } }
+    .task-content { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; overflow: hidden; }
+    .task-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .task-time { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; color: var(--text-muted); }
+    .task-cat-pill { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; padding: 0.15rem 0.45rem; border-radius: 6px; letter-spacing: 0.03em; }
+    .cat-prayer{background:var(--cat-prayer-bg);color:var(--cat-prayer)} .cat-work{background:var(--cat-work-bg);color:var(--cat-work)}
+    .cat-class{background:var(--cat-class-bg);color:var(--cat-class)} .cat-outreach{background:var(--cat-outreach-bg);color:var(--cat-outreach)}
+    .cat-rest{background:var(--cat-rest-bg);color:var(--cat-rest)} .cat-meal{background:var(--cat-meal-bg);color:var(--cat-meal)}
+    .task-title { font-size: 1.05rem; font-weight: 500; color: var(--text); line-height: 1.35; transition: all 0.2s; }
+    .task-card.is-done .task-title { text-decoration: line-through; color: var(--text-muted); opacity: 0.8; }
+    .task-card.is-done { background: rgba(18,26,42,0.6); border-color: rgba(36,52,77,0.5); }
+    .task-card.is-current { border-color: #3b82f6; box-shadow: 0 0 16px rgba(59,130,246,0.25); background: #192742; }
+    .task-current-tag { position: absolute; right: 12px; top: 10px; background: #2563eb; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 0.15rem 0.45rem; border-radius: 999px; letter-spacing: 0.05em; }
+    .task-card.is-past:not(.is-done) { opacity: 0.65; }
+    .nav-bar { position: fixed; left: 0; right: 0; background: rgba(15,23,42,0.94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-color: var(--border); z-index: 100; display: flex; justify-content: center; }
+    @media (max-width: 599px) { .nav-bar { bottom: 0; border-top: 1px solid var(--border); padding-bottom: max(6px, env(safe-area-inset-bottom)); } }
+    @media (min-width: 600px) { .nav-bar { top: 0; border-bottom: 1px solid var(--border); padding: 0.4rem 1rem; } }
+    .nav-inner { display: flex; width: 100%; max-width: 720px; justify-content: space-around; padding: 0.35rem 0.5rem; }
+    .nav-tab { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; background: transparent; border: none; color: var(--text-muted); font-family: inherit; font-size: 0.8rem; font-weight: 600; min-width: 80px; min-height: 48px; justify-content: center; cursor: pointer; border-radius: 12px; transition: all 0.2s ease; }
+    .nav-tab:active { transform: scale(0.95); }
+    .nav-tab.active { color: var(--accent); background: var(--accent-bg); }
+    .nav-icon { font-size: 1.25rem; line-height: 1; }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; gap: 1.1rem; }
+    .week-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.1rem; display: flex; flex-direction: column; gap: 1.1rem; }
+    .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.3rem; width: 100%; }
+    .week-col { display: flex; flex-direction: column; align-items: center; gap: 0.45rem; background: var(--surface-card); border: 1px solid var(--border); border-radius: 12px; padding: 0.6rem 0.15rem; user-select: none; }
+    .week-col.is-today { border-color: #3b82f6; background: #192742; }
+    .week-day-name { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; } .week-day-date { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+    .week-bar-container { width: 16px; height: 110px; background: #090d16; border-radius: 999px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+    .week-bar-fill { width: 100%; background: linear-gradient(180deg, #3b82f6, #1d4ed8); border-radius: 999px; transition: height 0.3s; }
+    .week-percent { font-size: 0.7rem; font-weight: 700; color: var(--text); } .week-prayer-tag { font-size: 0.65rem; color: #10b981; font-weight: 600; }
+    .editor-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.1rem; display: flex; flex-direction: column; gap: 1rem; }
+    .editor-task-item { background: var(--surface-card); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 0.85rem; display: flex; align-items: center; gap: 0.6rem; }
+    .editor-btn-group { display: flex; gap: 0.35rem; }
+    .btn-icon { background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.95rem; }
+    .btn-icon:hover { background: var(--surface-hover); } .btn-icon:active { transform: scale(0.92); } .btn-icon.btn-danger { color: #f87171; }
+    .btn { background: var(--surface-card); border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 1rem; font-weight: 600; padding: 0.7rem 1.1rem; border-radius: 10px; cursor: pointer; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.2s; }
+    .btn:active { transform: scale(0.98); } .btn-primary { background: #059669; border-color: #10b981; color: #fff; } .btn-danger-outline { border-color: rgba(239,68,68,0.4); color: #f87171; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-overlay.open { display: flex; } .modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; } .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    .form-control { background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px; padding: 0.65rem 0.8rem; color: var(--text); font-size: 16px; font-family: inherit; min-height: 48px; }
+    .form-control:focus { outline: none; border-color: var(--border-focus); } .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div id="storageWarning" class="banner-warning">⚠️ LocalStorage is disabled or unavailable. Changes will not be saved.</div>
+  <div class="app-container">
+    <div class="top-dashboard">
+      <header class="header-card">
+        <div class="header-top">
+          <div><div id="dateDisplay" class="date-label">Loading...</div><div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Asia/Dhaka</div></div>
+          <div id="streakBadge" class="streak-badge">🔥 <span id="streakCount">0</span> day streak <span style="font-size:0.75rem;opacity:0.8;">(Best: <span id="streakBest">0</span>)</span></div>
+        </div>
+        <div class="day-selector-row">
+          <select id="dayTypeSelect" class="day-type-select" aria-label="Select Day Type">
+            <option value="early">Early class day (Sun, Wed)</option>
+            <option value="mon">Monday (late class)</option>
+            <option value="thu">Thursday (late class, long)</option>
+            <option value="free">Free day (Tue, Sat)</option>
+            <option value="fri">Friday</option>
+          </select>
+          <span id="editedTodayBadge" class="badge-edited" style="display:none;">✏️ Edited today</span>
+        </div>
+        <div class="progress-stats">
+          <span>Tasks: <strong id="taskDoneCount">0</strong> / <span id="taskTotalCount">0</span></span>
+          <span>Prayers: <strong id="prayerDoneCount">0</strong> / 5</span>
+          <strong id="percentTotal">0%</strong>
+        </div>
+        <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+      </header>
+
+      <section class="prayers-card" id="prayersCard">
+        <div class="card-title"><span>Daily Prayers</span><span id="prayerSummaryText" style="font-size:0.8rem;color:var(--accent);">0 / 5</span></div>
+        <div class="prayers-grid">
+          <button type="button" class="prayer-btn" data-prayer="fajr"><span class="prayer-check">✓</span><span>Fajr</span></button><button type="button" class="prayer-btn" data-prayer="dhuhr"><span class="prayer-check">✓</span><span>Dhuhr</span></button><button type="button" class="prayer-btn" data-prayer="asr"><span class="prayer-check">✓</span><span>Asr</span></button><button type="button" class="prayer-btn" data-prayer="maghrib"><span class="prayer-check">✓</span><span>Maghrib</span></button><button type="button" class="prayer-btn" data-prayer="isha"><span class="prayer-check">✓</span><span>Isha</span></button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tab 1: Today View -->
+    <main id="viewToday" class="view-panel active">
+      <section class="tasks-section" id="taskListContainer"></section>
+    </main>
+
+    <!-- Tab 2: Week View -->
+    <section id="viewWeek" class="view-panel">
+      <div class="week-card">
+        <div class="card-title"><span>This Week (Dhaka)</span><span id="weekSummaryBadge" style="font-size:0.8rem;color:var(--text-muted);">Sun – Sat</span></div>
+        <div class="week-grid" id="weekGridContainer"></div>
+      </div>
+      <div class="header-card">
+        <div class="card-title">Streak Rule</div>
+        <p style="font-size:0.9rem;color:var(--text-muted);line-height:1.5;">A day counts towards your streak when you complete <strong>all 5 prayers</strong> AND at least <strong>80% of your scheduled routine tasks</strong>.</p>
+      </div>
+    </section>
+
+    <!-- Tab 3: Schedule Editor View -->
+    <section id="viewEdit" class="view-panel">
+      <div class="editor-card">
+        <div class="card-title">Edit Schedule</div>
+        <div class="form-group">
+          <label for="editScheduleDaySelect">Choose schedule group:</label>
+          <select id="editScheduleDaySelect" class="form-control">
+            <option value="everyday">Every day (Shared tasks)</option>
+            <option value="early">Early class day (Sun, Wed)</option>
+            <option value="mon">Monday (late class)</option>
+            <option value="thu">Thursday (late class, long)</option>
+            <option value="free">Free day (Tue, Sat)</option>
+            <option value="fri">Friday</option>
+          </select>
+        </div>
+        <div id="editorTasksList" style="display:flex;flex-direction:column;gap:0.55rem;"></div>
+        <button type="button" id="btnAddTask" class="btn btn-primary" style="margin-top:0.5rem;">+ Add New Task</button>
+        <div style="display:flex;gap:0.6rem;margin-top:1rem;flex-wrap:wrap;">
+          <button type="button" id="btnResetDayType" class="btn btn-danger-outline" style="flex:1;">Reset This Day Type</button>
+          <button type="button" id="btnResetAll" class="btn btn-danger-outline" style="flex:1;">Reset All to Default</button>
+        </div>
+      </div>
+      <div class="editor-card">
+        <div class="card-title">Backup & Restore</div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+          <button type="button" id="btnExportData" class="btn" style="flex:1;">📥 Export Backup (JSON)</button>
+          <button type="button" id="btnTriggerImport" class="btn" style="flex:1;">📤 Import Backup (JSON)</button>
+          <input type="file" id="fileImportInput" accept=".json,application/json" style="display:none;">
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <nav class="nav-bar"><div class="nav-inner">
+      <button type="button" class="nav-tab active" data-tab="Today"><span class="nav-icon">📋</span><span>Today</span></button>
+      <button type="button" class="nav-tab" data-tab="Week"><span class="nav-icon">📊</span><span>Week</span></button>
+      <button type="button" class="nav-tab" data-tab="Edit"><span class="nav-icon">⚙️</span><span>Edit</span></button>
+    </div></nav>
+
+  <div id="taskModal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 id="modalTitle" style="font-size:1.15rem;font-weight:700;">Add Task</h3>
+      <div class="form-group"><label for="taskInputTitle">Task Title *</label><input type="text" id="taskInputTitle" class="form-control" placeholder="e.g. PoshaX deep work" maxlength="120" required></div>
+      <div class="form-group"><label for="taskInputTime">Time Label (max 30 chars) *</label><input type="text" id="taskInputTime" class="form-control" placeholder="e.g. 08:00-11:00 AM" maxlength="30" required></div>
+      <div class="form-group"><label for="taskInputCategory">Category</label><select id="taskInputCategory" class="form-control"><option value="work">work</option><option value="prayer">prayer</option><option value="class">class</option><option value="outreach">outreach</option><option value="rest">rest</option><option value="meal">meal</option></select></div>
+      <div class="modal-actions">
+        <button type="button" id="btnCancelModal" class="btn">Cancel</button>
+        <button type="button" id="btnSaveTaskModal" class="btn btn-primary">Save Task</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* 1. DEFAULT SCHEDULE CONFIG */
+    const DEFAULT_SCHEDULE = {
+      everyday: [
+        { id: "ed_wake", time: "07:30 AM", title: "Wake up, pray Fajr (qaza), get sunlight", category: "prayer" },
+        { id: "ed_dinner", time: "11:00 PM", title: "Dinner (light)", category: "meal" },
+        { id: "ed_phone", time: "01:00 AM", title: "Phone away", category: "rest" },
+        { id: "ed_sleep", time: "01:30 AM", title: "Sleep", category: "rest" }
+      ],
+      early: [
+        { id: "e_bfit", time: "07:45-09:15 AM", title: "Breakfast, get ready", category: "meal" },
+        { id: "e_com1", time: "09:30-10:30 AM", title: "Commute: send 10 outreach DMs", category: "outreach" },
+        { id: "e_cls", time: "10:40 AM-02:20 PM", title: "Class, pray Dhuhr at college", category: "class" },
+        { id: "e_com2", time: "02:30-03:30 PM", title: "Commute: reply to DMs", category: "outreach" },
+        { id: "e_lnch", time: "03:30-04:15 PM", title: "Lunch, pray Asr", category: "meal" },
+        { id: "e_work", time: "04:15-07:30 PM", title: "PoshaX/YouthLink work (10-min break for Maghrib ~5:15)", category: "work" },
+        { id: "e_isha", time: "07:30 PM", title: "Isha", category: "prayer" },
+        { id: "e_adda", time: "07:30-10:00 PM", title: "Adda (outreach replies in first 20 min)", category: "rest" },
+        { id: "e_side", time: "10:00-11:00 PM", title: "Side-site build or uni study", category: "work" }
+      ],
+      mon: [
+        { id: "m_deep", time: "08:00-11:00 AM", title: "PoshaX deep work", category: "work" },
+        { id: "m_lcol", time: "11:15 AM", title: "Leave for college, pray Dhuhr there", category: "class" },
+        { id: "m_cls", time: "12:20-02:20 PM", title: "Class", category: "class" },
+        { id: "m_home", time: "03:30 PM", title: "Home, lunch, pray Asr", category: "meal" },
+        { id: "m_work", time: "04:15-07:30 PM", title: "PoshaX/YouthLink work (Maghrib break)", category: "work" },
+        { id: "m_isha", time: "07:30 PM", title: "Isha", category: "prayer" },
+        { id: "m_adda", time: "07:30-10:00 PM", title: "Adda (outreach replies in first 20 min)", category: "rest" },
+        { id: "m_side", time: "10:00-11:00 PM", title: "Side-site build or uni study", category: "work" }
+      ],
+      thu: [
+        { id: "th_deep", time: "08:00-11:00 AM", title: "PoshaX deep work", category: "work" },
+        { id: "th_lcol", time: "11:15 AM", title: "Leave for college", category: "class" },
+        { id: "th_cls", time: "12:20-03:30 PM", title: "Class, pray Asr at college", category: "class" },
+        { id: "th_home", time: "04:30 PM", title: "Home", category: "rest" },
+        { id: "th_work", time: "04:30-07:30 PM", title: "PoshaX/YouthLink work (Maghrib break)", category: "work" },
+        { id: "th_isha", time: "07:30 PM", title: "Isha", category: "prayer" },
+        { id: "th_adda", time: "07:30-10:00 PM", title: "Adda (outreach replies in first 20 min)", category: "rest" },
+        { id: "th_side", time: "10:00-11:00 PM", title: "Side-site build or uni study", category: "work" }
+      ],
+      free: [
+        { id: "f_deep", time: "08:00-11:30 AM", title: "PoshaX deep work or testing", category: "work" },
+        { id: "f_dhhr", time: "11:40 AM", title: "Pray Dhuhr, lunch", category: "prayer" },
+        { id: "f_outr", time: "12:30-01:30 PM", title: "Outreach and follow-ups", category: "outreach" },
+        { id: "f_site", time: "01:30-03:00 PM", title: "Build side-site template", category: "work" },
+        { id: "f_uni", time: "03:30-04:15 PM", title: "Uni study", category: "work" },
+        { id: "f_work", time: "04:15-07:30 PM", title: "PoshaX/YouthLink work (Maghrib break)", category: "work" },
+        { id: "f_isha", time: "07:30 PM", title: "Isha", category: "prayer" },
+        { id: "f_adda", time: "07:30-10:00 PM", title: "Adda", category: "rest" },
+        { id: "f_side", time: "10:00-11:00 PM", title: "Side-site build or uni study", category: "work" }
+      ],
+      fri: [
+        { id: "fr_jum", time: "12:30-02:00 PM", title: "Jumu'ah prayer", category: "prayer" },
+        { id: "fr_rest", time: "02:00-04:15 PM", title: "Rest", category: "rest" },
+        { id: "fr_work", time: "04:15-07:30 PM", title: "Light work or planning", category: "work" },
+        { id: "fr_adda", time: "07:30-10:00 PM", title: "Adda", category: "rest" },
+        { id: "fr_plan", time: "10:00-10:30 PM", title: "Evening: 30 min weekly planning", category: "work" }
+      ]
+    };
+
+    const DAY_TYPE_MAP = {
+      early: { label: "Early class day", weekdays: ["Sun", "Wed"] }, mon: { label: "Monday (late class)", weekdays: ["Mon"] },
+      thu: { label: "Thursday (late class, long)", weekdays: ["Thu"] }, free: { label: "Free day", weekdays: ["Tue", "Sat"] }, fri: { label: "Friday", weekdays: ["Fri"] }
+    };
+
+    /* 2. TIMEZONE & TIME UTILITIES (Asia/Dhaka) */
+    const TIMEZONE = 'Asia/Dhaka';
+    function getDhakaDateStr(date = new Date()) { return new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date); }
+    function getDhakaWeekday(date = new Date()) { return new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, weekday: 'short' }).format(date); }
+    function getDhakaFormattedDate(date = new Date()) { return new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).format(date); }
+    function getDhakaRoutineMinutes(date = new Date()) {
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, hour: 'numeric', minute: 'numeric', hour12: false, hourCycle: 'h23' }).formatToParts(date);
+      let h = parseInt(parts.find(p => p.type === 'hour').value, 10);
+      const m = parseInt(parts.find(p => p.type === 'minute').value, 10);
+      if (h < 5) h += 24; // Daily cycle: 5 AM to 4:59 AM next day
+      return h * 60 + m;
+    }
+    function parseTimeRangeToRoutineMinutes(timeStr) {
+      if (!timeStr) return { start: 9999, end: 9999 };
+      const matches = [...timeStr.trim().matchAll(/(\d{1,2}):(\d{2})\s*(am|pm)?/gi)];
+      if (!matches.length) return { start: 9999, end: 9999 };
+      function conv(match, defPM = false) {
+        let h = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10);
+        const mer = match[3] ? match[3].toLowerCase() : null;
+        if (mer === 'pm' && h < 12) h += 12;
+        else if (mer === 'am' && h === 12) h = 0;
+        else if (!mer) {
+          if (defPM && h < 12) h += 12;
+          else if (h >= 1 && h <= 6) h += 12;
+        }
+        if (h < 5) h += 24;
+        return h * 60 + m;
+      }
+      const start = conv(matches[0]);
+      let end = matches[1] ? conv(matches[1], start >= 720) : start + 45;
+      if (end <= start) end = start + 45;
+      return { start, end };
+    }
+
+    /* 3. STORAGE LAYER (SAFE TRY/CATCH) */
+    const storage = {
+      get(k, fb = null) {
+        try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : fb; }
+        catch (e) { showStorageWarn(); return fb; }
+      },
+      set(k, v) {
+        try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+        catch (e) { showStorageWarn(); return false; }
+      },
+      remove(k) {
+        try { localStorage.removeItem(k); } catch (e) { showStorageWarn(); }
+      },
+      getAllKeys() {
+        try { return Object.keys(localStorage); } catch (e) { showStorageWarn(); return []; }
+      }
+    };
+    function showStorageWarn() {
+      const el = document.getElementById('storageWarning');
+      if (el) el.style.display = 'block';
+    }
+
+    /* 4. SCHEDULE RESOLUTION & SNAPSHOTS */
+    function getCustomSchedule() { const c = storage.get('schedule:custom', null); return (c && typeof c === 'object') ? c : JSON.parse(JSON.stringify(DEFAULT_SCHEDULE)); }
+    function saveCustomSchedule(s) { storage.set('schedule:custom', s); }
+    function autoDetectDayType(date = new Date()) {
+      const wd = getDhakaWeekday(date);
+      for (const [k, v] of Object.entries(DAY_TYPE_MAP)) {
+        if (v.weekdays.includes(wd)) return k;
+      }
+      return 'free';
+    }
+    function getDayTypeForDate(dateStr) {
+      const c = storage.get('daytype:' + dateStr, null);
+      if (c && DAY_TYPE_MAP[c]) return c;
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return autoDetectDayType(new Date(Date.UTC(y, m - 1, d, 6, 0, 0)));
+    }
+    function resolveTasksForDayType(sched, dt) {
+      const ev = sched.everyday || [];
+      const sp = sched[dt] || [];
+      return [...ev, ...sp].map((t, idx) => ({ ...t, _s: parseTimeRangeToRoutineMinutes(t.time).start, _i: idx }))
+        .sort((a, b) => a._s - b._s || a._i - b._i)
+        .map(({ _s, _i, ...t }) => t);
+    }
+    function getActiveTasksForToday() {
+      const ts = getDhakaDateStr();
+      return resolveTasksForDayType(getCustomSchedule(), getDayTypeForDate(ts));
+    }
+    function getDefaultTasksForDayType(dt) { return resolveTasksForDayType(DEFAULT_SCHEDULE, dt); }
+    function checkIsEditedToday() {
+      const ts = getDhakaDateStr();
+      const dt = getDayTypeForDate(ts);
+      const act = getActiveTasksForToday().map(t => `${t.id}:${t.time}:${t.title}`).join('|');
+      const def = getDefaultTasksForDayType(dt).map(t => `${t.id}:${t.time}:${t.title}`).join('|');
+      return act !== def;
+    }
+    function ensureDaySnapshot(ds) {
+      let snap = storage.get('snapshot:' + ds, null);
+      if (!snap) {
+        const tasks = resolveTasksForDayType(getCustomSchedule(), getDayTypeForDate(ds));
+        snap = tasks.map(t => t.id);
+        storage.set('snapshot:' + ds, snap);
+      }
+      return snap;
+    }
+    function updateTodaySnapshotWithActiveTasks() { storage.set('snapshot:' + getDhakaDateStr(), getActiveTasksForToday().map(t => t.id)); }
+
+    /* 5. STREAK & STATS CALCULATION */
+    function isDaySuccessful(ds) {
+      const prayers = storage.get('prayers:' + ds, []);
+      if (!prayers || prayers.length < 5) return false;
+      const snap = storage.get('snapshot:' + ds, null);
+      const done = storage.get('done:' + ds, []);
+      let total = 0, doneCount = 0;
+      if (snap && snap.length > 0) {
+        total = snap.length;
+        doneCount = done.filter(id => snap.includes(id)).length;
+      } else if (ds === getDhakaDateStr()) {
+        const active = getActiveTasksForToday();
+        total = active.length;
+        doneCount = done.filter(id => active.some(t => t.id === id)).length;
+      } else return false;
+      return total > 0 ? (doneCount / total) >= 0.8 : false;
+    }
+    function calculateStreaks() {
+      const ts = getDhakaDateStr();
+      const dates = new Set(storage.getAllKeys().map(k => {
+        const m = k.match(/^(?:snapshot|done|prayers|daytype):(\d{4}-\d{2}-\d{2})$/);
+        return m ? m[1] : null;
+      }).filter(Boolean));
+      dates.add(ts);
+      const sorted = [...dates].sort();
+      const allDays = [];
+      const cur = new Date(sorted[0] + 'T00:00:00Z');
+      const target = new Date(ts + 'T00:00:00Z');
+      while (cur <= target) {
+        allDays.push(cur.toISOString().slice(0, 10));
+        cur.setUTCDate(cur.getUTCDate() + 1);
+      }
+      let best = 0, run = 0;
+      const map = {};
+      allDays.forEach(d => {
+        const ok = isDaySuccessful(d);
+        map[d] = ok;
+        if (ok) { run++; if (run > best) best = run; } else run = 0;
+      });
+      let current = 0;
+      let check = new Date(ts + 'T00:00:00Z');
+      if (map[ts]) {
+        while (map[check.toISOString().slice(0, 10)]) { current++; check.setUTCDate(check.getUTCDate() - 1); }
+      } else {
+        check.setUTCDate(check.getUTCDate() - 1);
+        while (map[check.toISOString().slice(0, 10)]) { current++; check.setUTCDate(check.getUTCDate() - 1); }
+      }
+      if (current > best) best = current;
+      return { current, best };
+    }
+
+    /* 6. RENDERING & UI UPDATES */
+    let activeTab = 'Today';
+    function getEditGroup() { const el = document.getElementById('editScheduleDaySelect'); return el ? el.value : 'everyday'; }
+    let currentEditingTaskId = null;
+    let lastRenderedDate = getDhakaDateStr();
+
+    function renderHeader() {
+      const ts = getDhakaDateStr();
+      document.getElementById('dateDisplay').textContent = getDhakaFormattedDate();
+      const dt = getDayTypeForDate(ts);
+      const sel = document.getElementById('dayTypeSelect');
+      if (sel.value !== dt) sel.value = dt;
+      document.getElementById('editedTodayBadge').style.display = checkIsEditedToday() ? 'inline-block' : 'none';
+
+      const streaks = calculateStreaks();
+      document.getElementById('streakCount').textContent = streaks.current;
+      document.getElementById('streakBest').textContent = streaks.best;
+
+      const active = getActiveTasksForToday();
+      const done = storage.get('done:' + ts, []);
+      const doneTasks = active.filter(t => done.includes(t.id)).length;
+      const prayers = storage.get('prayers:' + ts, []);
+
+      document.getElementById('taskDoneCount').textContent = doneTasks;
+      document.getElementById('taskTotalCount').textContent = active.length;
+      document.getElementById('prayerDoneCount').textContent = prayers.length;
+
+      const totalItems = active.length + 5;
+      const completed = doneTasks + prayers.length;
+      const pct = totalItems > 0 ? Math.round((completed / totalItems) * 100) : 0;
+      document.getElementById('percentTotal').textContent = `${pct}%`;
+      document.getElementById('progressFill').style.width = `${pct}%`;
+    }
+
+    function renderPrayers() {
+      const ts = getDhakaDateStr();
+      const prayers = storage.get('prayers:' + ts, []);
+      document.getElementById('prayerSummaryText').textContent = `${prayers.length} / 5`;
+      document.querySelectorAll('.prayer-btn').forEach(btn => {
+        btn.classList.toggle('is-done', prayers.includes(btn.dataset.prayer));
+      });
+    }
+
+    function renderTodayTasks(shouldScroll = false) {
+      const ts = getDhakaDateStr();
+      ensureDaySnapshot(ts);
+      const active = getActiveTasksForToday();
+      const done = storage.get('done:' + ts, []);
+      const curMin = getDhakaRoutineMinutes();
+
+      let curId = null;
+      for (const t of active) {
+        const { start, end } = parseTimeRangeToRoutineMinutes(t.time);
+        if (curMin >= start && curMin < end) { curId = t.id; break; }
+      }
+      if (!curId) {
+        for (const t of active) {
+          if (parseTimeRangeToRoutineMinutes(t.time).start > curMin) { curId = t.id; break; }
+        }
+      }
+      if (!curId && active.length) curId = active[active.length - 1].id;
+
+      const c = document.getElementById('taskListContainer');
+      c.innerHTML = '';
+      active.forEach(t => {
+        const isDone = done.includes(t.id);
+        const isPast = parseTimeRangeToRoutineMinutes(t.time).end <= curMin && !isDone;
+        const isCur = (t.id === curId);
+        const card = document.createElement('div');
+        card.className = `task-card ${isDone ? 'is-done' : ''} ${isPast ? 'is-past' : ''} ${isCur ? 'is-current' : ''}`;
+        card.dataset.id = t.id;
+        card.innerHTML = `
+          <div class="task-checkbox">${isDone ? '✓' : ''}</div>
+          <div class="task-content">
+            <div class="task-meta">
+              <span class="task-time">${t.time || ''}</span>
+              ${t.category ? `<span class="task-cat-pill cat-${t.category}">${t.category}</span>` : ''}
+            </div>
+            <div class="task-title">${escapeHtml(t.title)}</div>
+          </div>
+          ${isCur ? '<span class="task-current-tag">NOW</span>' : ''}
+        `;
+        card.addEventListener('click', () => toggleTaskDone(t.id));
+        c.appendChild(card);
+      });
+
+      if (shouldScroll && curId) {
+        setTimeout(() => {
+          const el = c.querySelector('.task-card.is-current');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 120);
+      }
+    }
+
+    function toggleTaskDone(taskId) {
+      const ts = getDhakaDateStr();
+      let done = storage.get('done:' + ts, []);
+      done = done.includes(taskId) ? done.filter(id => id !== taskId) : [...done, taskId];
+      storage.set('done:' + ts, done);
+      renderHeader();
+      renderTodayTasks(false);
+    }
+
+    function togglePrayer(pk) {
+      const ts = getDhakaDateStr();
+      let p = storage.get('prayers:' + ts, []);
+      p = p.includes(pk) ? p.filter(x => x !== pk) : [...p, pk];
+      storage.set('prayers:' + ts, p);
+      renderHeader();
+      renderPrayers();
+    }
+
+    function renderWeekView() {
+      const ts = getDhakaDateStr();
+      const grid = document.getElementById('weekGridContainer');
+      grid.innerHTML = '';
+      const [y, m, d] = ts.split('-').map(Number);
+      const todayDate = new Date(Date.UTC(y, m - 1, d));
+      const wds = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const offset = wds.indexOf(getDhakaWeekday(todayDate));
+      const start = new Date(todayDate);
+      start.setUTCDate(todayDate.getUTCDate() - offset);
+
+      for (let i = 0; i < 7; i++) {
+        const dObj = new Date(start);
+        dObj.setUTCDate(start.getUTCDate() + i);
+        const dStr = dObj.toISOString().slice(0, 10);
+        const isToday = (dStr === ts);
+        const snap = storage.get('snapshot:' + dStr, null);
+        const done = storage.get('done:' + dStr, []);
+        const prayers = storage.get('prayers:' + dStr, []);
+        const total = snap ? snap.length : (isToday ? getActiveTasksForToday().length : 0);
+        const doneCount = snap ? done.filter(id => snap.includes(id)).length : done.length;
+        const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+        const ok = isDaySuccessful(dStr);
+
+        const col = document.createElement('div');
+        col.className = `week-col ${isToday ? 'is-today' : ''}`;
+        col.innerHTML = `
+          <span class="week-day-name">${wds[i]}</span>
+          <span class="week-day-date">${dObj.getUTCDate()}</span>
+          <div class="week-bar-container">
+            <div class="week-bar-fill" style="height:${pct}%; ${ok ? 'background:linear-gradient(180deg,#10b981,#059669);' : ''}"></div>
+          </div>
+          <span class="week-percent">${pct}%</span>
+          <span class="week-prayer-tag">${prayers.length}/5</span>
+        `;
+        grid.appendChild(col);
+      }
+    }
+
+    function renderEditor() {
+      const sched = getCustomSchedule();
+      const list = sched[getEditGroup()] || [];
+      const c = document.getElementById('editorTasksList');
+      c.innerHTML = '';
+      if (!list.length) {
+        c.innerHTML = '<div style="color:var(--text-muted);font-size:0.9rem;padding:0.5rem 0;">No tasks in this group.</div>';
+        return;
+      }
+      list.forEach((t, i) => {
+        const item = document.createElement('div');
+        item.className = 'editor-task-item';
+        item.innerHTML = `
+          <div class="editor-btn-group">
+            <button type="button" class="btn-icon" data-action="up" data-idx="${i}" title="Move Up" ${i === 0 ? 'disabled style="opacity:0.3;"' : ''}>▲</button>
+            <button type="button" class="btn-icon" data-action="down" data-idx="${i}" title="Move Down" ${i === list.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>▼</button>
+          </div>
+          <div class="task-content" style="flex:1;">
+            <div class="task-meta"><span class="task-time">${t.time}</span>${t.category ? `<span class="task-cat-pill cat-${t.category}">${t.category}</span>` : ''}</div>
+            <div class="task-title" style="font-size:0.95rem;">${escapeHtml(t.title)}</div>
+          </div>
+          <div class="editor-btn-group">
+            <button type="button" class="btn-icon" data-action="edit" data-id="${t.id}" title="Edit">✏️</button>
+            <button type="button" class="btn-icon btn-danger" data-action="delete" data-id="${t.id}" title="Delete">🗑️</button>
+          </div>
+        `;
+        c.appendChild(item);
+      });
+    }
+
+    function moveEditorTask(from, dir) {
+      const sched = getCustomSchedule();
+      const group = getEditGroup();
+      const list = sched[group] || [];
+      const to = from + dir;
+      if (to < 0 || to >= list.length) return;
+      const [item] = list.splice(from, 1);
+      list.splice(to, 0, item);
+      sched[group] = list;
+      saveCustomSchedule(sched);
+      syncTodayIfActiveGroup();
+      renderEditor(); renderHeader(); renderTodayTasks(false);
+    }
+
+    function deleteEditorTask(tid) {
+      if (!confirm("Delete this task? Past history will remain intact.")) return;
+      const sched = getCustomSchedule();
+      const group = getEditGroup();
+      sched[group] = (sched[group] || []).filter(t => t.id !== tid);
+      saveCustomSchedule(sched);
+      syncTodayIfActiveGroup();
+      renderEditor(); renderHeader(); renderTodayTasks(false);
+    }
+
+    function syncTodayIfActiveGroup() { const dt = getDayTypeForDate(getDhakaDateStr()); const group = getEditGroup(); if (group === 'everyday' || group === dt) updateTodaySnapshotWithActiveTasks(); }
+
+    function openTaskModal(tid = null) {
+      currentEditingTaskId = tid;
+      const m = document.getElementById('taskModal');
+      const inTitle = document.getElementById('taskInputTitle');
+      const inTime = document.getElementById('taskInputTime');
+      const inCat = document.getElementById('taskInputCategory');
+      const group = getEditGroup();
+      if (tid) {
+        document.getElementById('modalTitle').textContent = 'Edit Task';
+        const task = (getCustomSchedule()[group] || []).find(t => t.id === tid);
+        if (task) { inTitle.value = task.title || ''; inTime.value = task.time || ''; inCat.value = task.category || 'work'; }
+      } else {
+        document.getElementById('modalTitle').textContent = 'Add Task';
+        inTitle.value = ''; inTime.value = ''; inCat.value = 'work';
+      }
+      m.classList.add('open');
+      inTitle.focus();
+    }
+
+    function closeTaskModal() {
+      document.getElementById('taskModal').classList.remove('open');
+      currentEditingTaskId = null;
+    }
+
+    function saveTaskModal() {
+      const title = document.getElementById('taskInputTitle').value.trim();
+      const time = document.getElementById('taskInputTime').value.trim();
+      const category = document.getElementById('taskInputCategory').value;
+      if (!title) return alert("Task title cannot be empty.");
+      if (!time) return alert("Time label cannot be empty.");
+      if (time.length > 30) return alert("Time label cannot exceed 30 characters.");
+
+      const sched = getCustomSchedule();
+      const group = getEditGroup();
+      const list = sched[group] || [];
+      if (currentEditingTaskId) {
+        const i = list.findIndex(t => t.id === currentEditingTaskId);
+        if (i !== -1) list[i] = { ...list[i], title, time, category };
+      } else {
+        list.push({ id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), time, title, category });
+      }
+      sched[group] = list;
+      saveCustomSchedule(sched);
+      syncTodayIfActiveGroup();
+      closeTaskModal();
+      renderEditor(); renderHeader(); renderTodayTasks(false);
+    }
+
+    function resetCurrentDayType() {
+      const groupName = document.getElementById('editScheduleDaySelect').selectedOptions[0].text;
+      if (!confirm(`Reset schedule for "${groupName}" to default?`)) return;
+      const sched = getCustomSchedule();
+      const group = getEditGroup();
+      sched[group] = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE[group] || []));
+      saveCustomSchedule(sched);
+      syncTodayIfActiveGroup();
+      renderEditor(); renderHeader(); renderTodayTasks(false);
+    }
+
+    function resetAllSchedules() {
+      if (!confirm("Reset ALL schedules to default? Completed records will NOT be lost.")) return;
+      storage.remove('schedule:custom');
+      updateTodaySnapshotWithActiveTasks();
+      renderEditor(); renderHeader(); renderTodayTasks(false);
+    }
+
+    function exportAllData() {
+      const payload = {
+        app: "daily-routine-checklist", version: 1, exportedAt: new Date().toISOString(),
+        customSchedule: storage.get('schedule:custom', null), data: {}
+      };
+      storage.getAllKeys().forEach(k => {
+        if (/^(?:done|prayers|snapshot|daytype):/.test(k)) payload.data[k] = storage.get(k);
+      });
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `routine-backup-${getDhakaDateStr()}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function importDataFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const p = JSON.parse(e.target.result);
+          if (!p || typeof p !== 'object') throw new Error("Invalid format");
+          if (p.customSchedule) storage.set('schedule:custom', p.customSchedule);
+          if (p.data && typeof p.data === 'object') {
+            for (const [k, v] of Object.entries(p.data)) {
+              if (/^(?:done|prayers|snapshot|daytype):/.test(k)) storage.set(k, v);
+            }
+          }
+          alert("Backup data restored successfully!");
+          renderHeader(); renderPrayers(); renderTodayTasks(false); renderWeekView(); renderEditor();
+        } catch (err) { alert("Import failed: " + err.message); }
+      };
+      reader.readAsText(file);
+    }
+
+    function escapeHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* 7. EVENT LISTENERS & LIFECYCLE */
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeTab = btn.dataset.tab;
+        document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(`view${activeTab}`).classList.add('active');
+        if (activeTab === 'Week') renderWeekView();
+        if (activeTab === 'Edit') renderEditor();
+        if (activeTab === 'Today') renderTodayTasks(false);
+      });
+    });
+
+    document.querySelectorAll('.prayer-btn').forEach(b => b.addEventListener('click', () => togglePrayer(b.dataset.prayer)));
+    document.getElementById('dayTypeSelect').addEventListener('change', (e) => {
+      storage.set('daytype:' + getDhakaDateStr(), e.target.value);
+      updateTodaySnapshotWithActiveTasks(); renderHeader(); renderTodayTasks(false);
+    });
+    document.getElementById('editScheduleDaySelect').addEventListener('change', renderEditor);
+    document.getElementById('editorTasksList').addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const a = btn.dataset.action;
+      if (a === 'up') moveEditorTask(parseInt(btn.dataset.idx, 10), -1);
+      else if (a === 'down') moveEditorTask(parseInt(btn.dataset.idx, 10), 1);
+      else if (a === 'edit') openTaskModal(btn.dataset.id);
+      else if (a === 'delete') deleteEditorTask(btn.dataset.id);
+    });
+
+    document.getElementById('btnAddTask').onclick = () => openTaskModal(null);
+    document.getElementById('btnCancelModal').onclick = closeTaskModal;
+    document.getElementById('btnSaveTaskModal').onclick = saveTaskModal;
+    document.getElementById('btnResetDayType').onclick = resetCurrentDayType;
+    document.getElementById('btnResetAll').onclick = resetAllSchedules;
+    document.getElementById('btnExportData').onclick = exportAllData;
+    document.getElementById('btnTriggerImport').onclick = () => document.getElementById('fileImportInput').click();
+    document.getElementById('fileImportInput').addEventListener('change', (e) => {
+      if (e.target.files.length) importDataFile(e.target.files[0]);
+    });
+
+    function checkRollover() {
+      const cur = getDhakaDateStr();
+      if (cur !== lastRenderedDate) {
+        lastRenderedDate = cur; ensureDaySnapshot(cur); renderHeader(); renderPrayers(); renderTodayTasks(true);
+        if (activeTab === 'Week') renderWeekView();
+      } else { renderHeader(); renderTodayTasks(false); }
+    }
+    setInterval(checkRollover, 30000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) checkRollover(); });
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    (function init() { ensureDaySnapshot(getDhakaDateStr()); renderHeader(); renderPrayers(); renderTodayTasks(true); })();
+  </script>
+</body>
+</html>
